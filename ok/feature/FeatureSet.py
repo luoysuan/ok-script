@@ -635,6 +635,20 @@ def compress_coco(coco_json) -> None:
 
     image_info_map = {img['id']: img for img in data['images']}
 
+    # Sort image_ids by source file modification time (oldest first)
+    # to minimize changes to generated packed images when new images are added
+    def _get_mtime(img_id):
+        info = image_info_map.get(img_id)
+        if info:
+            path = os.path.join(coco_folder, info['file_name'])
+            try:
+                return os.path.getmtime(path)
+            except OSError:
+                pass
+        return float('inf')
+
+    image_ids.sort(key=_get_mtime)
+
     dims_to_img_ids = {}
     
     for img_id in image_ids:
